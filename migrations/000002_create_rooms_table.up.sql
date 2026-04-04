@@ -1,0 +1,6 @@
+CREATE TABLE rooms (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    name VARCHAR(100) UNIQUE NOT NULL,
+    created_by UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
