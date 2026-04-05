@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ifaisalabid1/chat-app/internal/domain"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -41,7 +42,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 			WHERE email = $1
 	`
 
-	var user *domain.User
+	var user domain.User
 
 	if err := r.pool.QueryRow(ctx, query, email).Scan(
 		&user.ID,
@@ -51,7 +52,10 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
-	return user, nil
+	return &user, nil
 }
