@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ifaisalabid1/chat-app/internal/cache"
 	"github.com/ifaisalabid1/chat-app/internal/config"
 	"github.com/ifaisalabid1/chat-app/internal/repository"
 )
@@ -36,6 +37,15 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
+
+	rdb, err := cache.NewRedisClient(cfg.Redis)
+	if err != nil {
+		logger.Error("redis client error: %w", err)
+	}
+	defer rdb.Close()
+
+	userRepo := repository.NewUserRepository(pool)
+	msgRepo := repository.NewMessageRepository(pool)
 
 	r := chi.NewRouter()
 

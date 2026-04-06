@@ -21,10 +21,10 @@ type WSEvent struct {
 }
 
 type MessagePayload struct {
-	MessageID uuid.UUID `json:"message_id"`
-	RoomID    uuid.UUID `json:"room_id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Username  string    `json:"username"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
+	MessageID string `json:"message_id"`
+	RoomID    string `json:"room_id"`
+	UserID    string `json:"user_id"`
+	Username  string `json:"username"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at"`
 }
