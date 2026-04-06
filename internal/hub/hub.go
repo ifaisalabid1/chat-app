@@ -53,7 +53,7 @@ func (h *Hub) Run(ctx context.Context) {
 		case client := <-h.unregister:
 			if room, ok := h.clients[client.RoomID]; ok {
 				delete(room, client)
-				close(client.Send)
+				close(client.send)
 			}
 			h.logger.Info("client unregistered", "user_id", client.UserID, "room_id", client.RoomID)
 
@@ -103,10 +103,10 @@ func (h *Hub) fanOut(msg *domain.Message) {
 
 	for client := range clients {
 		select {
-		case client.Send <- data:
+		case client.send <- data:
 
 		default:
-			close(client.Send)
+			close(client.send)
 			delete(clients, client)
 		}
 	}

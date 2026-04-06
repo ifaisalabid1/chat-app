@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/ifaisalabid1/chat-app/internal/cache"
 	"github.com/ifaisalabid1/chat-app/internal/config"
+	"github.com/ifaisalabid1/chat-app/internal/hub"
 	"github.com/ifaisalabid1/chat-app/internal/repository"
 )
 
@@ -46,6 +47,9 @@ func main() {
 
 	userRepo := repository.NewUserRepository(pool)
 	msgRepo := repository.NewMessageRepository(pool)
+
+	h := hub.NewHub(rdb, logger)
+	go h.Run(ctx)
 
 	r := chi.NewRouter()
 
