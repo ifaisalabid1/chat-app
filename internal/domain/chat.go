@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,4 +25,17 @@ type Message struct {
 	UserID    string    `json:"user_id"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type ChatRepository interface {
+	GetOrCreateUser(ctx context.Context, username string) (*User, error)
+	GetOrCreateRoom(ctx context.Context, name string) (*Room, error)
+	SaveMessage(ctx context.Context, msg *Message) error
+	GetRecentMessages(ctx context.Context, roomID uuid.UUID, limit int) ([]Message, error)
+}
+
+type ChatUsecase interface {
+	JoinOrCreateRoom(ctx context.Context, username, roomName string) (*User, *Room, error)
+	SendMessage(ctx context.Context, roomID, userID uuid.UUID, content string) (*Message, error)
+	GetRoomHistory(ctx context.Context, roomID uuid.UUID) ([]Message, error)
 }

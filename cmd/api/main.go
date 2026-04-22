@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ifaisalabid1/chat-app/internal/storage"
 )
 
 func main() {
@@ -26,6 +27,27 @@ func main() {
 		},
 	}))
 	slog.SetDefault(logger)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pool, err := storage.NewPostgresPool(ctx, "postgres://chat_db_user:postgres@localhost:5432/chat_db?sslmode=disable")
+	if err != nil {
+		logger.Error("failed to initialize postgres", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	logger.Info("connected to postgres")
+
+	redisClient, err := storage.NewRedisClient(ctx, "localhost:6379", "")
+	if err != nil {
+		logger.Error("failed to initialize redis", "error", err)
+		os.Exit(1)
+	}
+	defer redisClient.Close()
+
+	logger.Info("connected to redis")
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
