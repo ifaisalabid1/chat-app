@@ -13,7 +13,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ifaisalabid1/chat-app/internal/delivery/ws"
+	"github.com/ifaisalabid1/chat-app/internal/repository"
 	"github.com/ifaisalabid1/chat-app/internal/storage"
+	"github.com/ifaisalabid1/chat-app/internal/usecase"
 )
 
 func main() {
@@ -49,23 +52,36 @@ func main() {
 
 	logger.Info("connected to redis")
 
+	chatRepo := repository.NewPostgresChatRepo(pool)
+	chatUsecase := usecase.NewChatUsecase(chatRepo, 5*time.Second)
+
+	hub := ws.NewHub(redisClient, chatUsecase)
+
+	go hub.Run(context.Background())
+
+	wsHandler := ws.NewHandler(hub)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, `{"status": "ok"}`)
 	})
 
+	r.Get("/ws", wsHandler.ServeWS)
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "index.html")
+	})
+
 	srv := &http.Server{
-		Addr:         ":8080",
-		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              ":8080",
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	shutdownError := make(chan error)
