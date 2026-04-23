@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ifaisalabid1/chat-app/internal/config"
 	"github.com/ifaisalabid1/chat-app/internal/delivery/ws"
 	"github.com/ifaisalabid1/chat-app/internal/repository"
 	"github.com/ifaisalabid1/chat-app/internal/storage"
@@ -31,10 +32,16 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("failed to load configuration", "error", err)
+		os.Exit(1)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pool, err := storage.NewPostgresPool(ctx, "postgres://chat_db_user:postgres@localhost:5432/chat_db?sslmode=disable")
+	pool, err := storage.NewPostgresPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("failed to initialize postgres", "error", err)
 		os.Exit(1)
@@ -43,7 +50,7 @@ func main() {
 
 	logger.Info("connected to postgres")
 
-	redisClient, err := storage.NewRedisClient(ctx, "localhost:6379", "")
+	redisClient, err := storage.NewRedisClient(ctx, cfg.RedisURL, "")
 	if err != nil {
 		logger.Error("failed to initialize redis", "error", err)
 		os.Exit(1)
@@ -78,7 +85,7 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:              ":8080",
+		Addr:              ":" + cfg.Port,
 		Handler:           r,
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       120 * time.Second,
